@@ -1,0 +1,7 @@
+fairseq2
+pydub
+sentencepiece
+soundfile
+torchaudio
+torch 
+Flask

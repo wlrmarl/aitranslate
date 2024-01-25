@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Audio Translator</title>
+    
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body class="bg-dark text-white">
+    <div class="container">
+        <h1 class="text-center text-primary mt-5">AI Audio Translator</h1>
+
+        <div class="form-group text-center">
+            <label for="targetLanguage" class="text-light">Select Target Language:</label>
+            <select id="targetLanguage" name="target_language_code" class="form-control custom-dropdown mx-auto style="width: 200px;"">
+        {% for language in target_lang %}
+            <option value="{{ language.code }}">{{ language.name }}</option>
+        {% endfor %}
+            </select>
+        </div>
+        <div class="text-center">
+            <button id="recordButton" class="btn btn-primary">Record</button>
+            <button id="stopButton" class="btn btn-danger" disabled>Stop</button>
+            <button id="translateButton" class="btn btn-success" disabled>Translate</button>
+            <button id="playButton" class="btn btn-info" disabled>Play Translated Audio</button>
+        </div>
+
+        <div class="text-center">
+            <audio id="audioPlayer" controls class="mt-3 mx-auto"></audio>
+        </div>
+    </div>
+    </div>
+    <script>
+    
+   
+        let mediaRecorder;
+        let audioChunks = [];
+        let translateButton = document.getElementById('translateButton');
+        let playButton = document.getElementById('playButton');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const recordButton = document.getElementById('recordButton');
+            const stopButton = document.getElementById('stopButton');
+            const audioPlayer = document.getElementById('audioPlayer');
+            const targetLanguageSelect = document.getElementById('targetLanguage');
+
+            recordButton.addEventListener('click', startRecording);
+            stopButton.addEventListener('click', stopRecording);
+            translateButton.addEventListener('click', translateAudio);
+            playButton.addEventListener('click', playTranslatedAudio);
+
+            function startRecording() {
+                audioChunks = [];
+                translateButton.disabled = true;
+                playButton.disabled = true;
+
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(function(stream) {
+                        mediaRecorder = new MediaRecorder(stream);
+                        mediaRecorder.ondataavailable = function(event) {
+                            if (event.data.size > 0) {
+                                audioChunks.push(event.data);
+                            }
+                        };
+                        mediaRecorder.onstop = function() {
+                            translateButton.disabled = false;
+                            playButton.disabled = false;
+                        };
+
+                        mediaRecorder.start();
+                        recordButton.disabled = true;
+                        stopButton.disabled = false;
+                    })
+                    .catch(function(error) {
+                        alert('Error accessing microphone: ' + error.message);
+                    });
+            }
+
+            function stopRecording() {
+                mediaRecorder.stop();
+                recordButton.disabled = false;
+                stopButton.disabled = true;
+            }
+
+            function translateAudio() {
+                translateButton.disabled = true;
+                playButton.disabled = true;
+
+                const formData = new FormData();
+                formData.append('audio_data', new File(audioChunks, 'recorded_audio.wav'));
+                formData.append('target_language_code', targetLanguageSelect.value);
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        playButton.disabled = false;
+                    } else {
+                        alert('Translation failed: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Translation failed: ' + error.message);
+                });
+            }
+
+            function playTranslatedAudio() {
+            const audioPlayer = document.getElementById('audioPlayer');
+            
+            fetch('/get_translated_audio')
+ // Assuming the translated file is stored as 'translated.wav'
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    audioPlayer.src = URL.createObjectURL(blob);
+                    audioPlayer.load();
+                    audioPlayer.play();
+                })
+                .catch(error => {
+                    alert('Error playing translated audio: ' + error.message);
+                });
+        }
+    });
+</script>
+<!-- Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>
