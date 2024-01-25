@@ -43,8 +43,9 @@ Start the App
 
 
 ## Demo
+https://github.com/wlrmarl/aitranslate/assets/66261828/a6e6fcc5-5c01-49c1-82f8-e60597ac220e
 
-[[Watch the Demo]((https://github.com/wlrmarl/aitranslate/tmp/screenshot.png)](https://github.com/wlrmarl/aitranslate/tmp/demo.mp4)
+
 
 
 ## Acknowledgements 
